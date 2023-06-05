@@ -1,5 +1,4 @@
 import argparse
-
 args = argparse.ArgumentParser(description='Description of your program')
 # Add arguments
 args.add_argument('--n_client', type=int, default = 5, help='Number of clients')
@@ -12,4 +11,5 @@ args.add_argument('--loops', type=int, default = 2000, help='total iterations')
 args.add_argument('--pmax', type=float, default = 1.0, help='Description of pmax')
 args.add_argument('--action_noise', type= float, default= 3e-1)
 args.add_argument('--threshold', type= float, default= 3e-1)
+
 args = args.parse_args()

@@ -192,4 +192,3 @@ class TD3(nn.Module):
         # self.schedule_critic.step()
         # self.critic_lr = max(self.critic_lr*0.9999,1e-4)
         # self.critic_opt = torch.optim.Adam(self.critic.parameters(),lr = self.critic_lr)
-        return [critic_loss, actor_loss]

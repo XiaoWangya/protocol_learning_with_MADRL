@@ -27,7 +27,7 @@ d_output_bs = n_client*2   # Output dimensionality of the BS, which includes pow
 d_memory = args.d_memory   # Memory capacity for storing experiences while training
 
 def main():
-    Bernard = SummaryWriter(comment='BM4')    # Assigning an instance of SummaryWriter class to Bernard variable, to be used to write summaries to TensorBoard log files.
+    Bernard = SummaryWriter(comment='_BM4')    # Assigning an instance of SummaryWriter class to Bernard variable, to be used to write summaries to TensorBoard log files.
 
     Agent = TD3(d_input_bs, d_output_bs, args.n_hidden, d_memory, args.batch, tau= 5e-3).to(device)   # Creating an instance of HetGAT_MADRL_PL class with given inputs as parameters
     Agent.memory = Agent.memory.to(device)
