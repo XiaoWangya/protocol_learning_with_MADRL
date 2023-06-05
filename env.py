@@ -46,15 +46,15 @@ class protocol_learning():
         # calculate rate, delay, and energy consumption
         transmit_power_list, bandwidth_list = bs_RB_allocation
         rate_list = [self.cal_rate(self.channel[k, : , : ], bandwidth_list[k]*self.bandwidth, transmit_power_list[k]) for k in range(self.n_client)]
-        delay_list = [1/(rate+1e-50) for rate in rate_list]
-        energy_comsup_list = flatten([min(self.ue_energy_list[k], bs_grants[k]*transmit_power_list[k]*delay_list[k] + self.request_record[k][-1]*self.energy_enc)  for k in range(self.n_client)])
+        delay_list = [1/(rate+1e-50)*bs_grants[rate_list.index(rate)] for rate in rate_list]
+        energy_comsup_list = flatten([min(self.ue_energy_list[k], transmit_power_list[k]*delay_list[k] + self.request_record[k][-1]*self.energy_enc)  for k in range(self.n_client)])
         self.ue_energy_list = [max(0, self.ue_energy_list[k] -( energy_comsup_list[k] + self.request_record[k][-1]*self.energy_enc) )for k in range(self.n_client)]
         
         # evolution of control state and check the stability of system
         self.check_done(bs_grants)
         self.evolution_control_status(bs_grants) 
         #update the reward
-        reward = -sum(flatten([energy_comsup_list[k] for k in range(self.n_client)])) - self.drift_plus_penalty_paraneter*sum(flatten([energy_comsup_list[k]*(energy_comsup_list[k] - 2*self.ue_energy_list[k]) for k in range(self.n_client)])) + bool(self.rounds*sum(bs_grants))- self.done + bool(sum(self.ue_energy_list)==0) -0.1*sum([(rate_list[k])<2*bs_grants[k] for k in range(self.n_client)])#14(a)
+        reward = -sum(flatten([energy_comsup_list[k] for k in range(self.n_client)])) - self.drift_plus_penalty_paraneter*sum(flatten([energy_comsup_list[k]*(energy_comsup_list[k] - 2*self.ue_energy_list[k]) for k in range(self.n_client)])) + bool(self.rounds)- self.done + bool(sum(self.ue_energy_list)==0) -0.1*sum([(delay_list[k])>2*bs_grants[k] for k in range(self.n_client)])#14(a)
 
         #update channel
         if self.channel_model == 'guassian':

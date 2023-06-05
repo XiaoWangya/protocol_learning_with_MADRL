@@ -82,6 +82,8 @@ def main():
         Bernard.add_scalar('Reward', sum(environment.reward_list), global_step=loops)
         Bernard.add_scalars('energy remain', {'ue%d'%index: value for index, value in enumerate(environment.ue_energy_list)}, global_step=loops )
         Bernard.add_scalars('Access efficiency', {'ue%d'%index: value for index, value in enumerate(access_efficiency)}, global_step=loops) 
+        Bernard.add_scalar('Average access efficiency', torch.tensor(access_efficiency).mean(), global_step=loops)
+        Bernard.add_scalar('Average energy efficiency', np.log(environment.rounds/sum(environment.ue_energy_list)), global_step=loops)
     Bernard.close()   # Closing the TensorBoard Summary Writer instance
     
 if __name__ == "__main__":
