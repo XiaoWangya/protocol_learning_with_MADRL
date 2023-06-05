@@ -189,6 +189,8 @@ class TD3(nn.Module):
         for param, target_param in zip(self.actor.parameters(), self.target_actor.parameters()):
             target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
         self.actor_update_counter += 1
+        
+        return [critic_loss, actor_loss]
         # self.schedule_critic.step()
         # self.critic_lr = max(self.critic_lr*0.9999,1e-4)
         # self.critic_opt = torch.optim.Adam(self.critic.parameters(),lr = self.critic_lr)

@@ -1,0 +1,4 @@
+Device 0: NVIDIA GeForce RTX 3090
+Device 1: NVIDIA GeForce RTX 3090
+Device 2: NVIDIA GeForce RTX 3090
+Device 3: NVIDIA GeForce RTX 3090
