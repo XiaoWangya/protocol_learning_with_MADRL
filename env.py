@@ -161,16 +161,8 @@ class protocol_learning():
             tuple: A tuple containing the state transition matrix A, control action matrix B,
             optimal LQR gain K, and Lyapunov matrix P.
         """
-        spectral_radius = 1.02
+        spectral_radius = 1.05
         # Generate random matrices for A and B with spectral radius greater than unity
-        # A = np.random.rand(shape, shape) - 0.5
-    
-        # # Calculate the current spectral radius
-        # current_radius = np.max(np.abs(np.linalg.eigvals(A)))
-        
-        # # Scale the matrix to achieve the desired spectral radius
-        # A = (spectral_radius / current_radius) * A
-        # B = np.random.normal(size=(shape, shape)) 
         A = np.eye(shape)*spectral_radius
         B = np.eye(shape)
         # Calculate the optimal LQR gain K using the Lyapunov equation
@@ -179,4 +171,3 @@ class protocol_learning():
         P = solve_discrete_are(A, B, Q, R)  # Solve the continuous-time algebraic Riccati equation
         K = np.linalg.inv(R) @ B.T @ P  # Calculate the optimal LQR gain
         return A, B, K, P
-
