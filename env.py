@@ -49,10 +49,10 @@ class protocol_learning():
         delay_list = [1/(rate+1e-50)*bs_grants[rate_list.index(rate)] for rate in rate_list]
         energy_comsup_list = flatten([min(self.ue_energy_list[k], transmit_power_list[k]*delay_list[k] + self.request_record[k][-1]*self.energy_enc)  for k in range(self.n_client)])
         self.ue_energy_list = [max(0, self.ue_energy_list[k] -( energy_comsup_list[k] + self.request_record[k][-1]*self.energy_enc) )for k in range(self.n_client)]
-        
+        bs_grants_ = [grants*(delay_list < 2) for grants in bs_grants]
         # evolution of control state and check the stability of system
-        self.check_done(bs_grants)
-        self.evolution_control_status(bs_grants) 
+        self.check_done(bs_grants_)
+        self.evolution_control_status(bs_grants_) 
         #update the reward
         reward = -sum(flatten([energy_comsup_list[k] for k in range(self.n_client)])) - self.drift_plus_penalty_paraneter*sum(flatten([energy_comsup_list[k]*(energy_comsup_list[k] - 2*self.ue_energy_list[k]) for k in range(self.n_client)])) + bool(self.rounds)- self.done + bool(sum(self.ue_energy_list)==0) -0.1*sum([(delay_list[k])>2*bs_grants[k] for k in range(self.n_client)])#14(a)
 
