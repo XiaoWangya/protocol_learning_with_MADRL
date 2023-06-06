@@ -70,21 +70,22 @@ def main():
                 [loss1, loss2] = Agent.update()
                 Bernard.add_scalar('loss of critic', loss1, global_step=epoch)
                 Bernard.add_scalar('loss of actor', loss2, global_step=epoch)
-                args.action_noise *= (1-5e-4)
-            access_his = [requests[_] + access_his[_] for _ in range(n_client)]    
+                
+            access_his = [requests[_] + access_his[_] for _ in range(n_client)]
             grants_his = [grants[_] + grants_his[_] for _ in range(n_client)]    
             
             Bernard.add_scalars('agent requests', {'ue%d'%index: value for index, value in enumerate(requests)}, global_step=epoch ) 
             Bernard.add_scalars('BS grants', {'ue%d'%index: value for index, value in enumerate(grants)}, global_step=epoch ) 
             Bernard.add_scalars('channel', {'ue%d'%index: value for index, value in enumerate(abs(environment.channel))}, global_step=epoch ) 
+        args.action_noise *= (1-5e-3)
         # environment = plenv(n_client, n_subcarrier, record_length=args.record_length)   # Creating a new instance of plenv at the end of each loop.
         access_efficiency = [grants_his[_]/max(1, access_his[_]) for _ in range(n_client)]   
         Bernard.add_scalar('rounds exist', environment.rounds, global_step= loops)
         Bernard.add_scalar('Reward', sum(environment.reward_list), global_step=loops)
-        Bernard.add_scalars('energy remain', {'ue%d'%index: value for index, value in enumerate(environment.ue_energy_list)}, global_step=loops )
-        Bernard.add_scalars('Access efficiency', {'ue%d'%index: value for index, value in enumerate(access_efficiency)}, global_step=loops) 
+        Bernard.add_scalars('energy remain', {'ue%d'%index: value for index, value in enumerate(environment.ue_energy_list)}, global_step=loops)
+        Bernard.add_scalars('Access efficiency', {'ue%d'%index: value for index, value in enumerate(access_efficiency)}, global_step=loops)
         Bernard.add_scalar('Average access efficiency', torch.tensor(access_efficiency).mean(), global_step=loops)
-        Bernard.add_scalar('Average energy efficiency', np.log(environment.rounds/sum(environment.ue_energy_list)), global_step=loops) 
+        Bernard.add_scalar('Average energy efficiency', np.log(environment.rounds/(sum(environment.ue_energy_list)+ 1e-50)), global_step=loops)
     Bernard.close()   # Closing the TensorBoard Summary Writer instance
     
 if __name__ == "__main__":
