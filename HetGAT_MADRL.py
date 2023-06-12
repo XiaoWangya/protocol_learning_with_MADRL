@@ -172,8 +172,8 @@ class HetGAT_MADRL_PL(nn.Module):
         self.optimizer_actor = torch.optim.Adam(self.actor_est.parameters())
         # self.optimizer_actor = torch.optim.RMSprop(self.actor_shared_est_ue.parameters(), lr=1e-4)
         # self.optimizer_actor.add_param_group({"params": self.actor_shared_est_bs.parameters(), "lr":1e-4})
-        self.optimizer_critic = torch.optim.Adam(self.critic_est.parameters())
-        self.optimizer_critic2 = torch.optim.Adam(self.critic_est2.parameters())
+        self.optimizer_critic = torch.optim.Adam(self.critic_est.parameters(), lr = 3e-3)
+        self.optimizer_critic2 = torch.optim.Adam(self.critic_est2.parameters(), lr = 3e-3)
         # self.loss_f = nn.MSELoss()
         self.memory = torch.zeros(d_memory, (d_input_ue*self.n_client + d_input_bs)*2 + d_output_ue*self.n_client + d_output_bs + 1).to(device)
 

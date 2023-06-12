@@ -108,8 +108,8 @@ class TD3(nn.Module):
         self.actor_lr = actor_lr
         self.critic_lr = critic_lr
         self.actor_opt = torch.optim.Adam(self.actor.parameters())
-        self.critic_opt = torch.optim.Adam(self.critic.parameters())
-        self.critic_opt2 = torch.optim.Adam(self.critic2.parameters())
+        self.critic_opt = torch.optim.Adam(self.critic.parameters(), lr = 3e-3)
+        self.critic_opt2 = torch.optim.Adam(self.critic2.parameters(), lr = 3e-3)
         # self.schedule_actor = torch.optim.lr_scheduler.StepLR(self.actor_opt, step_size=schedule_step, gamma=0.1)
         # self.schedule_critic = torch.optim.lr_scheduler.StepLR(self.critic_opt, step_size=schedule_step, gamma=0.1)
         self.memory_counter = 0

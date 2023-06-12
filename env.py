@@ -37,7 +37,9 @@ class protocol_learning():
         self.drift_plus_penalty_paraneter = 1
         self.statbility_info = {'stability':[0 for _ in range(self.n_client)], 'indicator': [0 for _ in range(self.n_client)]}
         self.done = False
-        self.rounds = 0
+        self.rounds = 1
+        self.energy_comsup_list_req = []
+        self.energy_comsup_list_tns = []
         self.reward_list = []
     
     def step(self, bs_grants, bs_RB_allocation):
@@ -47,12 +49,17 @@ class protocol_learning():
         transmit_power_list, bandwidth_list = bs_RB_allocation
         rate_list = [self.cal_rate(self.channel[k, : , : ], bandwidth_list[k]*self.bandwidth, transmit_power_list[k]) for k in range(self.n_client)]
         delay_list = [1/(rate+1e-50)*bs_grants[rate_list.index(rate)] for rate in rate_list]
-        energy_comsup_list = flatten([min(self.ue_energy_list[k], transmit_power_list[k]*delay_list[k] + self.request_record[k][-1]*self.energy_enc)  for k in range(self.n_client)])
-        self.ue_energy_list = [max(0, self.ue_energy_list[k] -( energy_comsup_list[k] + self.request_record[k][-1]*self.energy_enc) )for k in range(self.n_client)]
-        
+        self.energy_comsup_list_tns = [transmit_power_list[k]*delay_list[k]  for k in range(self.n_client)]
+        self.bs_grants_ = [grant*(delay_list[bs_grants.index(grant)] < 2) for grant in bs_grants]
+        for grant in bs_grants:
+            if self.ue_energy_list[bs_grants.index(grant)] <= self.energy_comsup_list_tns[bs_grants.index(grant)]:
+                self.bs_grants_[bs_grants.index(grant)] = 0
+        # self.bs_grants_ = [grant*(delay_list[bs_grants.index(grant)] < 2) for grant in bs_grants if self.ue_energy_list[bs_grants.index(grant)] >= self.energy_comsup_list_tns[bs_grants.index(grant)] else ]
+        energy_comsup_list = flatten([self.energy_comsup_list_req[k] + min(self.ue_energy_list[k],  self.energy_comsup_list_tns[k])  for k in range(self.n_client)])
+        self.ue_energy_list = [max(0, self.ue_energy_list[k] - self.energy_comsup_list_tns[k]) for k in range(self.n_client)]
         # evolution of control state and check the stability of system
-        self.check_done(bs_grants)
-        self.evolution_control_status(bs_grants) 
+        self.check_done(self.bs_grants_)
+        self.evolution_control_status(self.bs_grants_) 
         #update the reward
         reward = -sum(flatten([energy_comsup_list[k] for k in range(self.n_client)])) - self.drift_plus_penalty_paraneter*sum(flatten([energy_comsup_list[k]*(energy_comsup_list[k] - 2*self.ue_energy_list[k]) for k in range(self.n_client)])) + bool(self.rounds)- self.done + bool(sum(self.ue_energy_list)==0) -0.1*sum([(delay_list[k])>2*bs_grants[k] for k in range(self.n_client)])#14(a)
 
@@ -78,13 +85,8 @@ class protocol_learning():
         temp2 = []
         for k in range(self.n_client):
             A, B, K, P, x = self.control_status_list[k]
-            # dvdt = (A-scheduling[k]*B@K).dot(x).T.dot(Z).dot(A-scheduling[k]*B@K).dot(x) - x.T.dot(Z).dot(x)
-            # v_x = x.T@P@x
-            # dvdt = x.T@((A-scheduling[k]*B@K).T@P + P@(A-scheduling[k]*B@K))@x
-            # dvdt = x.T@P@x -np.dot(np.dot(-(B@K@x).T, -(B@K@x)), 1)*scheduling[k]
-            # temp.append((dvdt>0)*1)
             temp1.append((((A@x -scheduling[k]*B@K@x).T@P@(A@x -scheduling[k]*B@K@x) - self.stability_constant[k])>0)*1)
-            temp2.append((self.ue_energy_list[k]==0)*1)
+        temp2.append((self.ue_energy_list[k]<=self.energy_enc)*1)
         self.done = (sum(temp1)>0)*5 + (sum(temp2)>0)*1
 
     def get_state_ue(self):
@@ -102,10 +104,12 @@ class protocol_learning():
     def get_state_bs(self, ue_requests = None):
         if ue_requests is not None:
             # #print(ue_requests, '\n')
+            
             for k in range(self.n_client):
                 self.request_record[k][:self.record_length -1] = self.request_record[k][1:]
                 self.request_record[k][-1] = ue_requests[k]
-                self.ue_energy_list[k] -= ue_requests[k]*self.energy_enc
+                self.ue_energy_list[k] -= self.request_record[k][-1]*self.energy_enc
+            self.energy_comsup_list_req = [self.request_record[k][-1]*self.energy_enc  for k in range(self.n_client)]
         # #print(self.channel)
         state_bs = [
             {
@@ -139,7 +143,7 @@ class protocol_learning():
             state_transition_matrix, control_action_matrix, feedback_gain_matrix, lyapunov_matrix, control_status = self.control_status_list[i]
             # n, n = state_transition_matrix.shape
             # self.control_status_list[i][-1] = state_transition_matrix @control_status -scheduling[i]*control_action_matrix@ feedback_gain_matrix@control_status 
-            self.control_status_list[i][-1] = state_transition_matrix @control_status - scheduling[i]*control_action_matrix@ feedback_gain_matrix@control_status + np.random.normal(scale= 1e-4, size= control_status.shape)
+            self.control_status_list[i][-1] = state_transition_matrix @control_status - scheduling[i]*control_action_matrix@ feedback_gain_matrix@control_status
 
         # check stability
             stability_indicator = (state_transition_matrix@self.control_status_list[i][-1]).T@lyapunov_matrix@state_transition_matrix@self.control_status_list[i][-1]
@@ -161,7 +165,7 @@ class protocol_learning():
             tuple: A tuple containing the state transition matrix A, control action matrix B,
             optimal LQR gain K, and Lyapunov matrix P.
         """
-        spectral_radius = 1.05
+        spectral_radius = 1.1
         # Generate random matrices for A and B with spectral radius greater than unity
         A = np.eye(shape)*spectral_radius
         B = np.eye(shape)
